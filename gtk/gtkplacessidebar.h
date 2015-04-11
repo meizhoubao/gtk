@@ -131,6 +131,11 @@ GSList *           gtk_places_sidebar_list_shortcuts             (GtkPlacesSideb
 GDK_AVAILABLE_IN_3_10
 GFile *            gtk_places_sidebar_get_nth_bookmark           (GtkPlacesSidebar   *sidebar,
                                                                   gint                n);
+GDK_AVAILABLE_IN_3_18
+void               gtk_places_sidebar_emulate_dragging_start      (GtkPlacesSidebar   *sidebar);
+
+GDK_AVAILABLE_IN_3_18
+void               gtk_places_sidebar_emulate_dragging_stop       (GtkPlacesSidebar   *sidebar);
 
 G_END_DECLS
 
