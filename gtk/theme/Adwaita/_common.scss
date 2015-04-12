@@ -2922,6 +2922,10 @@ GtkPlacesSidebar.sidebar .view {
 
   color: $fg_color;
   background-color: transparent;
+  &:insensitive {
+    background-color: $insensitive_bg_color;
+    color: $insensitive_fg_color;
+  }
 
   .separator,
   .separator:backdrop { @extend .separator; }

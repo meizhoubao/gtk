@@ -4021,6 +4021,9 @@ GtkFileChooserDialog .dialog-action-box {
 GtkPlacesSidebar.sidebar .view {
   color: #eeeeec;
   background-color: transparent; }
+  GtkPlacesSidebar.sidebar .view:insensitive {
+    background-color: #323636;
+    color: #939695; }
   GtkPlacesSidebar.sidebar .view .image {
     color: #bbbdbc; }
     GtkPlacesSidebar.sidebar .view .image:selected {

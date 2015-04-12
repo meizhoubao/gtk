@@ -215,6 +215,7 @@ enum {
   PLACES_SIDEBAR_COLUMN_TOOLTIP,
   PLACES_SIDEBAR_COLUMN_SECTION_TYPE,
   PLACES_SIDEBAR_COLUMN_HEADING_TEXT,
+  PLACES_SIDEBAR_COLUMN_SENSITIVE,
   PLACES_SIDEBAR_COLUMN_COUNT
 };
 
@@ -517,6 +518,7 @@ add_place (GtkPlacesSidebar *sidebar,
                       PLACES_SIDEBAR_COLUMN_BOOKMARK, place_type != PLACES_BOOKMARK,
                       PLACES_SIDEBAR_COLUMN_TOOLTIP, tooltip,
                       PLACES_SIDEBAR_COLUMN_SECTION_TYPE, section_type,
+                      PLACES_SIDEBAR_COLUMN_SENSITIVE, TRUE,
                       -1);
 }
 
@@ -1440,6 +1442,50 @@ pos_is_into_or_before (GtkTreeViewDropPosition pos)
   return (pos == GTK_TREE_VIEW_DROP_BEFORE || pos == GTK_TREE_VIEW_DROP_INTO_OR_BEFORE);
 }
 
+static void
+update_possible_drop_targets (GtkPlacesSidebar *sidebar,
+                              gboolean          dragging)
+{
+  GtkTreeIter iter;
+  PlaceType place_type;
+  gchar *uri;
+  gboolean sensitive;
+
+  if (!gtk_tree_model_get_iter_first (GTK_TREE_MODEL (sidebar->store), &iter))
+    return;
+
+  do
+    {
+      sensitive = TRUE;
+      gtk_tree_model_get (GTK_TREE_MODEL (sidebar->store), &iter,
+                          PLACES_SIDEBAR_COLUMN_ROW_TYPE, &place_type,
+                          PLACES_SIDEBAR_COLUMN_URI, &uri,
+                          -1);
+      if (dragging)
+        {
+          switch (place_type)
+            {
+              case PLACES_CONNECT_TO_SERVER:
+                sensitive = FALSE;
+                break;
+              case PLACES_BUILT_IN:
+                if (g_strcmp0 (uri, "recent:///") == 0)
+                  sensitive = FALSE;
+
+                break;
+              default:
+                break;
+           }
+        }
+
+      gtk_list_store_set (sidebar->store, &iter,
+                          PLACES_SIDEBAR_COLUMN_SENSITIVE, sensitive,
+                          -1);
+      g_free (uri);
+    }
+  while (gtk_tree_model_iter_next (GTK_TREE_MODEL (sidebar->store), &iter));
+}
+
 /* Computes the appropriate row and position for dropping */
 static gboolean
 compute_drop_position (GtkTreeView              *tree_view,
@@ -1720,6 +1766,7 @@ start_drop_feedback (GtkPlacesSidebar        *sidebar,
     {
       gtk_tree_view_set_drag_dest_row (sidebar->tree_view, path, pos);
     }
+  update_possible_drop_targets (sidebar, TRUE);
 }
 
 static void
@@ -1843,7 +1890,10 @@ drag_finalize (GtkPlacesSidebar *sidebar)
   free_drag_data (sidebar);
   /* we could call finalize when disposing the widget */
   if (sidebar->tree_view != NULL)
-    stop_drop_feedback (sidebar);
+    {
+      stop_drop_feedback (sidebar);
+      update_possible_drop_targets (sidebar, FALSE);
+    }
   remove_drop_bookmark_feedback_row (sidebar);
 
   if (sidebar->drag_leave_timeout_id)
@@ -4097,6 +4147,7 @@ gtk_places_sidebar_init (GtkPlacesSidebar *sidebar)
   gtk_tree_view_column_pack_start (col, cell, FALSE);
   gtk_tree_view_column_set_attributes (col, cell,
                                        "gicon", PLACES_SIDEBAR_COLUMN_GICON,
+                                       "sensitive", PLACES_SIDEBAR_COLUMN_SENSITIVE,
                                        NULL);
   gtk_tree_view_column_set_cell_data_func (col, cell,
                                            icon_cell_renderer_func,
@@ -4142,6 +4193,7 @@ gtk_places_sidebar_init (GtkPlacesSidebar *sidebar)
                                        "text", PLACES_SIDEBAR_COLUMN_NAME,
                                        "visible", PLACES_SIDEBAR_COLUMN_NO_EJECT,
                                        "editable-set", PLACES_SIDEBAR_COLUMN_BOOKMARK,
+                                       "sensitive", PLACES_SIDEBAR_COLUMN_SENSITIVE,
                                        NULL);
   g_object_set (cell,
                 "ellipsize", PANGO_ELLIPSIZE_END,
@@ -4751,7 +4803,8 @@ shortcuts_model_new (GtkPlacesSidebar *sidebar)
     G_TYPE_BOOLEAN,
     G_TYPE_STRING,
     G_TYPE_INT,
-    G_TYPE_STRING
+    G_TYPE_STRING,
+    G_TYPE_BOOLEAN
   };
 
   model = g_object_new (shortcuts_model_get_type (), NULL);
@@ -5294,6 +5347,7 @@ void
 gtk_places_sidebar_emulate_dragging_start (GtkPlacesSidebar *sidebar)
 {
   show_new_bookmark_row (sidebar, NULL);
+  update_possible_drop_targets (sidebar, TRUE);
   sidebar->drop_state = DROP_STATE_NEW_BOOKMARK_ARMED_PERMANENT;
 }
 
