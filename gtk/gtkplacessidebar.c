@@ -216,6 +216,7 @@ enum {
   PLACES_SIDEBAR_COLUMN_SECTION_TYPE,
   PLACES_SIDEBAR_COLUMN_HEADING_TEXT,
   PLACES_SIDEBAR_COLUMN_SENSITIVE,
+  PLACES_SIDEBAR_COLUMN_BACKGROUND_COLOR,
   PLACES_SIDEBAR_COLUMN_COUNT
 };
 
@@ -519,6 +520,7 @@ add_place (GtkPlacesSidebar *sidebar,
                       PLACES_SIDEBAR_COLUMN_TOOLTIP, tooltip,
                       PLACES_SIDEBAR_COLUMN_SECTION_TYPE, section_type,
                       PLACES_SIDEBAR_COLUMN_SENSITIVE, TRUE,
+                      PLACES_SIDEBAR_COLUMN_BACKGROUND_COLOR, NULL,
                       -1);
 }
 
@@ -1715,12 +1717,18 @@ show_new_bookmark_row (GtkPlacesSidebar *sidebar,
   gint drop_target_index;
   GtkTreePath *new_bookmark_path;
   GIcon *new_bookmark_icon;
+  GdkRGBA *background_color;
 
   bookmarks_index = bookmarks_get_first_index (sidebar);
 
   /* Add the row if it doesn't exists yet */
   if (sidebar->drop_state == DROP_STATE_NORMAL)
     {
+      background_color = g_malloc (sizeof (GdkRGBA));
+      background_color->red = .0;
+      background_color->green = .0;
+      background_color->blue = .0;
+      background_color->alpha = .1;
       new_bookmark_icon =g_themed_icon_new ("bookmark-new-symbolic");
       gtk_list_store_insert_with_values (sidebar->store, &iter, bookmarks_index,
                                          PLACES_SIDEBAR_COLUMN_ROW_TYPE, PLACES_DROP_FEEDBACK,
@@ -1729,6 +1737,7 @@ show_new_bookmark_row (GtkPlacesSidebar *sidebar,
                                          PLACES_SIDEBAR_COLUMN_NAME, _("New bookmark"),
                                          PLACES_SIDEBAR_COLUMN_INDEX, bookmarks_index,
                                          PLACES_SIDEBAR_COLUMN_NO_EJECT, TRUE,
+                                         PLACES_SIDEBAR_COLUMN_BACKGROUND_COLOR, background_color,
                                          -1);
       g_object_unref (new_bookmark_icon);
     }
@@ -4148,6 +4157,7 @@ gtk_places_sidebar_init (GtkPlacesSidebar *sidebar)
   gtk_tree_view_column_set_attributes (col, cell,
                                        "gicon", PLACES_SIDEBAR_COLUMN_GICON,
                                        "sensitive", PLACES_SIDEBAR_COLUMN_SENSITIVE,
+                                       "cell-background-rgba", PLACES_SIDEBAR_COLUMN_BACKGROUND_COLOR,
                                        NULL);
   gtk_tree_view_column_set_cell_data_func (col, cell,
                                            icon_cell_renderer_func,
@@ -4194,6 +4204,7 @@ gtk_places_sidebar_init (GtkPlacesSidebar *sidebar)
                                        "visible", PLACES_SIDEBAR_COLUMN_NO_EJECT,
                                        "editable-set", PLACES_SIDEBAR_COLUMN_BOOKMARK,
                                        "sensitive", PLACES_SIDEBAR_COLUMN_SENSITIVE,
+                                       "cell-background-rgba", PLACES_SIDEBAR_COLUMN_BACKGROUND_COLOR,
                                        NULL);
   g_object_set (cell,
                 "ellipsize", PANGO_ELLIPSIZE_END,
@@ -4804,7 +4815,8 @@ shortcuts_model_new (GtkPlacesSidebar *sidebar)
     G_TYPE_STRING,
     G_TYPE_INT,
     G_TYPE_STRING,
-    G_TYPE_BOOLEAN
+    G_TYPE_BOOLEAN,
+    GDK_TYPE_RGBA
   };
 
   model = g_object_new (shortcuts_model_get_type (), NULL);
